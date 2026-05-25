@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="예산관리" />
+  <meta name="theme-color" content="#f5f0e8" />
+  <title>호치민 예산관리</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      background: #f5f0e8;
+      font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      min-height: 100vh;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    }
+    #app { max-width: 420px; margin: 0 auto; padding: 28px 16px 100px; }
+
+    .header { margin-bottom: 22px; }
+    .header-sub { font-size: 11px; color: #b0a090; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+    .header-title { font-size: 32px; font-weight: 800; color: #2d2416; letter-spacing: -1px; }
+
+    .tabs { display: flex; background: #ece7de; border-radius: 14px; padding: 4px; margin-bottom: 16px; gap: 4px; }
+    .tab-btn {
+      flex: 1; padding: 9px; border-radius: 10px; border: none;
+      background: transparent; color: #b0a090; font-weight: 400;
+      font-size: 13px; cursor: pointer; transition: all 0.15s;
+      font-family: inherit;
+    }
+    .tab-btn.active { background: #fff; color: #2d2416; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+
+    .card {
+      background: #fff; border-radius: 20px; padding: 22px 20px;
+      margin-bottom: 14px; box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      border: 1.5px solid transparent;
+    }
+    .card.over { border-color: #e05a5a; }
+
+    .warning {
+      background: #fff0f0; border: 1px solid #f5c0c0; border-radius: 10px;
+      padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #c0392b;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .budget-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
+    .budget-label { font-size: 11px; color: #b0a090; margin-bottom: 2px; }
+    .budget-amount { font-size: 26px; font-weight: 800; color: #2d2416; }
+    .budget-amount.over { color: #e05a5a; }
+    .budget-used { font-size: 15px; font-weight: 700; color: #888; }
+
+    .progress-bg { background: #f0ebe2; border-radius: 100px; height: 10px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 100px; transition: width 0.5s; }
+    .progress-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: #c0b8a8; }
+
+    .cat-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .cat-chip { border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600; }
+
+    .savings-card {
+      background: #fff; border-radius: 20px; padding: 16px 20px;
+      margin-bottom: 14px; box-shadow: 0 2px 16px rgba(0,0,0,0.06);
+      cursor: pointer; border: 1.5px solid #ece7de; transition: all 0.2s;
+    }
+    .savings-card.has-savings { background: #e8f5ee; border-color: #7ec8a0; }
+    .savings-row { display: flex; justify-content: space-between; align-items: center; }
+    .savings-label { font-size: 11px; color: #7ec8a0; font-weight: 700; margin-bottom: 2px; }
+    .savings-amount { font-size: 22px; font-weight: 800; color: #2d8a5e; }
+    .savings-sub { font-size: 11px; color: #a0c8b0; margin-top: 1px; }
+    .savings-detail { margin-top: 12px; border-top: 1px solid #c8e8d8; padding-top: 10px; }
+    .savings-item { display: flex; justify-content: space-between; font-size: 13px; color: #2d8a5e; margin-bottom: 6px; }
+
+    .input-card { background: #fff; border-radius: 20px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .input-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .input-card-title { font-size: 13px; font-weight: 700; color: #2d2416; }
+    .manage-btn {
+      font-size: 11px; color: #a89bc4; background: #f4f0fb; border: none;
+      border-radius: 8px; padding: 4px 10px; cursor: pointer; font-weight: 600;
+      font-family: inherit;
+    }
+
+    .cat-select { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .cat-btn {
+      padding: 6px 12px; border-radius: 20px; font-size: 12px;
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+      border: 2px solid #ece7de; background: #faf8f4; color: #999; font-weight: 400;
+    }
+    .cat-btn.active { font-weight: 700; }
+
+    input[type="number"], input[type="text"] {
+      width: 100%; padding: 11px 14px; border-radius: 12px;
+      border: 1.5px solid #ece7de; font-size: 14px; color: #2d2416;
+      background: #faf8f4; outline: none; font-family: inherit;
+      margin-bottom: 10px; display: block;
+    }
+    input[type="number"] { font-size: 16px; font-weight: 600; }
+
+    .add-btn {
+      width: 100%; padding: 13px; border-radius: 12px; border: none;
+      background: #2d2416; color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: background 0.2s; font-family: inherit;
+    }
+    .add-btn.done { background: #7ec8a0; }
+    .add-btn.grocery-done { background: #81b29a; }
+
+    .cat-manager { background: #fff; border-radius: 20px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .cat-manager-title { font-size: 13px; font-weight: 700; color: #2d2416; margin-bottom: 14px; }
+    .cat-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+    .cat-list-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #faf8f4; border-radius: 12px; padding: 10px 14px;
+    }
+    .cat-list-left { display: flex; align-items: center; gap: 8px; }
+    .cat-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .cat-name { font-size: 13px; color: #2d2416; }
+    .del-btn { background: none; border: none; color: #d0c8be; font-size: 16px; cursor: pointer; }
+
+    .add-cat-section { border-top: 1px solid #ece7de; padding-top: 14px; }
+    .add-cat-label { font-size: 12px; color: #b0a090; margin-bottom: 10px; font-weight: 600; }
+    .emoji-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+    .emoji-btn {
+      width: 34px; height: 34px; border-radius: 8px; border: 2px solid #ece7de;
+      background: #faf8f4; font-size: 16px; cursor: pointer;
+    }
+    .emoji-btn.active { border-color: #a89bc4; background: #f4f0fb; }
+    .color-grid { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .color-dot {
+      width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+      border: 3px solid transparent;
+    }
+    .color-dot.active { border-color: #2d2416; }
+    .add-cat-btn {
+      width: 100%; padding: 10px; border-radius: 12px; border: none;
+      background: #a89bc4; color: #fff; font-size: 13px; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+
+    .history-card { background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .history-title { font-size: 13px; font-weight: 700; color: #2d2416; margin-bottom: 14px; }
+    .history-list { display: flex; flex-direction: column; gap: 10px; }
+    .history-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; background: #faf8f4; border-radius: 12px;
+    }
+    .history-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .history-info { flex: 1; min-width: 0; }
+    .history-memo { font-size: 13px; font-weight: 600; color: #2d2416; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-time { font-size: 11px; color: #c0b8a8; }
+    .history-amount { font-size: 15px; font-weight: 800; color: #2d2416; flex-shrink: 0; }
+
+    .empty { text-align: center; color: #c0b8a8; font-size: 13px; margin-top: 16px; line-height: 1.8; }
+  </style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const DEFAULT_CATEGORIES = [
+  { id: "coffee", label: "☕ 커피/카페", color: "#c8956c" },
+  { id: "food",   label: "🍜 식비",      color: "#e8a838" },
+  { id: "shopping",label: "🛍 쇼핑",    color: "#d4827a" },
+  { id: "transport",label:"🛵 교통",     color: "#7ab8c4" },
+  { id: "etc",    label: "💸 기타",      color: "#a89bc4" },
+];
+const EMOJI_OPTIONS = ["☕","🍜","🛍","🛵","💸","🎮","💄","📚","🏋️","🎵","🍺","🐶","✈️","💊","🧴","🎁","🍰","🧋"];
+const COLOR_OPTIONS = ["#c8956c","#e8a838","#d4827a","#7ab8c4","#a89bc4","#7ec8a0","#e07a5f","#81b29a","#f2cc8f","#a8c5da"];
+const WEEKLY_BUDGET = 1500000;
+const GROCERY_BUDGET = 1000000;
+
+function fmt(n) { return new Intl.NumberFormat("vi-VN").format(n) + "đ"; }
+function weekKey(date) {
+  const d = new Date(date), day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(d.setDate(diff)).toISOString().split("T")[0];
+}
+function monthKey(date) {
+  const d = new Date(date);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+function load(key, def) { try { return JSON.parse(localStorage.getItem(key)) ?? def; } catch { return def; } }
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} }
+
+// State
+let state = {
+  tab: "weekly",
+  entries: load("vn-entries", []),
+  grocery: load("vn-grocery", []),
+  savings: load("vn-savings", []),
+  categories: load("vn-categories", null) || DEFAULT_CATEGORIES,
+  amount: "", memo: "", category: "coffee",
+  showSavings: false, showCatManager: false,
+  newEmoji: "🎮", newLabel: "", newColor: "#7ec8a0",
+  added: false,
+};
+
+function setState(patch) { Object.assign(state, patch); render(); }
+
+function checkSavings() {
+  const cw = weekKey(new Date());
+  const allWeeks = [...new Set(state.entries.map(e => weekKey(e.date)))].filter(w => w !== cw);
+  const savedWeeks = new Set(state.savings.map(s => s.weekKey));
+  let changed = false;
+  for (const w of allWeeks) {
+    if (savedWeeks.has(w)) continue;
+    const spent = state.entries.filter(e => weekKey(e.date) === w).reduce((s,e) => s+e.amount, 0);
+    const left = WEEKLY_BUDGET - spent;
+    if (left > 0) { state.savings.push({ weekKey: w, amount: left }); changed = true; }
+  }
+  if (changed) save("vn-savings", state.savings);
+}
+
+function addEntry() {
+  const val = parseInt(state.amount, 10);
+  if (!val || val <= 0) return;
+  if (state.tab === "grocery") {
+    state.grocery.unshift({ id: Date.now(), amount: val, memo: state.memo, date: new Date().toISOString() });
+    save("vn-grocery", state.grocery);
+  } else {
+    state.entries.unshift({ id: Date.now(), amount: val, memo: state.memo, category: state.category, date: new Date().toISOString() });
+    save("vn-entries", state.entries);
+    checkSavings();
+  }
+  state.amount = ""; state.memo = ""; state.added = true;
+  render();
+  setTimeout(() => { state.added = false; render(); }, 1200);
+}
+
+function delEntry(id) { state.entries = state.entries.filter(e => e.id !== id); save("vn-entries", state.entries); render(); }
+function delGrocery(id) { state.grocery = state.grocery.filter(e => e.id !== id); save("vn-grocery", state.grocery); render(); }
+function getCat(id) { return state.categories.find(c => c.id === id) || state.categories[state.categories.length-1]; }
+
+function addCategory() {
+  if (!state.newLabel.trim()) return;
+  const cat = { id: "cat_"+Date.now(), label: `${state.newEmoji} ${state.newLabel.trim()}`, color: state.newColor };
+  state.categories.push(cat);
+  save("vn-categories", state.categories);
+  state.newLabel = ""; state.newEmoji = "🎮"; state.newColor = "#7ec8a0";
+  render();
+}
+function delCategory(id) {
+  if (state.categories.length <= 1) return;
+  state.categories = state.categories.filter(c => c.id !== id);
+  if (state.category === id) state.category = state.categories[0].id;
+  save("vn-categories", state.categories);
+  render();
+}
+
+function render() {
+  const cw = weekKey(new Date()), cm = monthKey(new Date());
+  const wEntries = state.entries.filter(e => weekKey(e.date) === cw);
+  const totalSpent = wEntries.reduce((s,e) => s+e.amount, 0);
+  const remaining = WEEKLY_BUDGET - totalSpent;
+  const pct = Math.min(totalSpent/WEEKLY_BUDGET*100, 100);
+  const isOver = totalSpent > WEEKLY_BUDGET;
+  const barColor = isOver ? "#e05a5a" : pct > 75 ? "#e8a838" : "#7ec8a0";
+
+  const mGrocery = state.grocery.filter(e => monthKey(e.date) === cm);
+  const totalGrocery = mGrocery.reduce((s,e) => s+e.amount, 0);
+  const remGrocery = GROCERY_BUDGET - totalGrocery;
+  const gPct = Math.min(totalGrocery/GROCERY_BUDGET*100, 100);
+  const isGOver = totalGrocery > GROCERY_BUDGET;
+  const gColor = isGOver ? "#e05a5a" : gPct > 75 ? "#e8a838" : "#81b29a";
+
+  const totalSaved = state.savings.reduce((s,e) => s+e.amount, 0);
+  const spendByCat = state.categories.map(c => ({
+    ...c, total: wEntries.filter(e=>e.category===c.id).reduce((s,e)=>s+e.amount,0)
+  })).filter(c=>c.total>0);
+
+  const html = `
+    <div class="header">
+      <div class="header-sub">호치민 절약 생활 💪</div>
+      <div class="header-title">예산 관리</div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn ${state.tab==="weekly"?"active":""}" onclick="setState({tab:'weekly'})">📅 주간 지출</button>
+      <button class="tab-btn ${state.tab==="grocery"?"active":""}" onclick="setState({tab:'grocery'})">🛒 장보기</button>
+    </div>
+
+    ${state.tab === "weekly" ? `
+      <!-- Budget Card -->
+      <div class="card ${isOver?"over":""}">
+        ${isOver ? `<div class="warning"><span>⚠️</span><span>이번 주 예산 초과! 조금만 참아봐요 ㅠㅠ</span></div>` : ""}
+        <div class="budget-row">
+          <div>
+            <div class="budget-label">남은 예산</div>
+            <div class="budget-amount ${isOver?"over":""}">${isOver?"-":""}${fmt(Math.abs(remaining))}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="budget-label">사용</div>
+            <div class="budget-used">${fmt(totalSpent)}</div>
+          </div>
+        </div>
+        <div class="progress-bg"><div class="progress-bar" style="width:${pct}%;background:${barColor}"></div></div>
+        <div class="progress-labels"><span>0</span><span style="color:${barColor};font-weight:700">${Math.round(pct)}%</span><span>150만đ</span></div>
+        ${spendByCat.length > 0 ? `<div class="cat-chips">${spendByCat.map(c=>`<div class="cat-chip" style="background:${c.color}22;border:1px solid ${c.color}55;color:${c.color}">${c.label.split(" ")[0]} ${fmt(c.total)}</div>`).join("")}</div>` : ""}
+      </div>
+
+      <!-- Savings Card -->
+      <div class="savings-card ${totalSaved>0?"has-savings":""}" onclick="setState({showSavings:!state.showSavings})">
+        <div class="savings-row">
+          <div>
+            <div class="savings-label">🐷 모은 돈</div>
+            <div class="savings-amount">${fmt(totalSaved)}</div>
+            <div class="savings-sub">매주 남은 돈이 여기 쌓여요</div>
+          </div>
+          <div style="font-size:18px">${state.showSavings?"🔼":"🔽"}</div>
+        </div>
+        ${state.showSavings ? `<div class="savings-detail">${
+          state.savings.length === 0
+          ? `<div style="font-size:12px;color:#a0c8b0;text-align:center">아직 절약한 주가 없어요. 이번 주부터! 💪</div>`
+          : state.savings.map(s => {
+              const d = new Date(s.weekKey);
+              return `<div class="savings-item"><span>📅 ${d.getMonth()+1}/${d.getDate()} 주</span><span style="font-weight:700">+${fmt(s.amount)}</span></div>`;
+            }).join("")
+        }</div>` : ""}
+      </div>
+
+      <!-- Input Card -->
+      <div class="input-card">
+        <div class="input-card-header">
+          <div class="input-card-title">지출 입력</div>
+          <button class="manage-btn" onclick="setState({showCatManager:!state.showCatManager})">⚙️ 카테고리 관리</button>
+        </div>
+        <div class="cat-select">
+          ${state.categories.map(c => `
+            <button class="cat-btn ${state.category===c.id?"active":""}"
+              style="${state.category===c.id?`border-color:${c.color};background:${c.color}18;color:${c.color}`:""}"
+              onclick="setState({category:'${c.id}'})">${c.label}</button>
+          `).join("")}
+        </div>
+        <input type="number" placeholder="금액 (đ)" value="${state.amount}"
+          oninput="state.amount=this.value" onkeydown="if(event.key==='Enter')addEntry()" />
+        <input type="text" placeholder="메모 (선택)" value="${state.memo}"
+          oninput="state.memo=this.value" onkeydown="if(event.key==='Enter')addEntry()" />
+        <button class="add-btn ${state.added?"done":""}" onclick="addEntry()">${state.added?"✓ 추가됐어요!":"추가하기"}</button>
+      </div>
+
+      <!-- Cat Manager -->
+      ${state.showCatManager ? `
+        <div class="cat-manager">
+          <div class="cat-manager-title">⚙️ 카테고리 관리</div>
+          <div class="cat-list">
+            ${state.categories.map(c => `
+              <div class="cat-list-item">
+                <div class="cat-list-left">
+                  <div class="cat-dot" style="background:${c.color}"></div>
+                  <span class="cat-name">${c.label}</span>
+                </div>
+                <button class="del-btn" onclick="delCategory('${c.id}')">✕</button>
+              </div>
+            `).join("")}
+          </div>
+          <div class="add-cat-section">
+            <div class="add-cat-label">새 카테고리 추가</div>
+            <div class="emoji-grid">
+              ${EMOJI_OPTIONS.map(e => `<button class="emoji-btn ${state.newEmoji===e?"active":""}" onclick="setState({newEmoji:'${e}'})">${e}</button>`).join("")}
+            </div>
+            <div class="color-grid">
+              ${COLOR_OPTIONS.map(c => `<div class="color-dot ${state.newColor===c?"active":""}" style="background:${c}" onclick="setState({newColor:'${c}'})"></div>`).join("")}
+            </div>
+            <input type="text" placeholder="카테고리 이름" value="${state.newLabel}"
+              oninput="state.newLabel=this.value" onkeydown="if(event.key==='Enter')addCategory()" />
+            <button class="add-cat-btn" onclick="addCategory()">+ 추가하기</button>
+          </div>
+        </div>
+      ` : ""}
+
+      <!-- History -->
+      ${wEntries.length > 0 ? `
+        <div class="history-card">
+          <div class="history-title">이번 주 내역</div>
+          <div class="history-list">
+            ${wEntries.map(e => {
+              const cat = getCat(e.category);
+              const d = new Date(e.date);
+              return `<div class="history-item">
+                <div class="history-icon" style="background:${cat.color}22">${cat.label.split(" ")[0]}</div>
+                <div class="history-info">
+                  <div class="history-memo">${e.memo || cat.label.split(" ")[1] || "지출"}</div>
+                  <div class="history-time">${d.getMonth()+1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2,"0")}</div>
+                </div>
+                <div class="history-amount">-${fmt(e.amount)}</div>
+                <button class="del-btn" onclick="delEntry(${e.id})">✕</button>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+      ` : `<div class="empty">아직 이번 주 지출이 없어요 😊<br/>잘 하고 있어요!</div>`}
+
+    ` : `
+      <!-- Grocery Budget Card -->
+      <div class="card ${isGOver?"over":""}">
+        ${isGOver ? `<div class="warning"><span>⚠️</span><span>이번 달 장보기 예산 초과! ㅠㅠ</span></div>` : ""}
+        <div class="budget-row">
+          <div>
+            <div class="budget-label">🛒 이번 달 남은 장보기 예산</div>
+            <div class="budget-amount ${isGOver?"over":""}">${isGOver?"-":""}${fmt(Math.abs(remGrocery))}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="budget-label">사용</div>
+            <div class="budget-used">${fmt(totalGrocery)}</div>
+          </div>
+        </div>
+        <div class="progress-bg"><div class="progress-bar" style="width:${gPct}%;background:${gColor}"></div></div>
+        <div class="progress-labels"><span>0</span><span style="color:${gColor};font-weight:700">${Math.round(gPct)}%</span><span>100만đ</span></div>
+      </div>
+
+      <!-- Grocery Input -->
+      <div class="input-card">
+        <div class="input-card-title" style="margin-bottom:14px">🛒 장보기 입력</div>
+        <input type="number" placeholder="금액 (đ)" value="${state.amount}"
+          oninput="state.amount=this.value" onkeydown="if(event.key==='Enter')addEntry()" />
+        <input type="text" placeholder="메모 (예: 마트, 채소류...)" value="${state.memo}"
+          oninput="state.memo=this.value" onkeydown="if(event.key==='Enter')addEntry()" />
+        <button class="add-btn ${state.added?"grocery-done":""}" onclick="addEntry()">${state.added?"✓ 추가됐어요!":"추가하기"}</button>
+      </div>
+
+      <!-- Grocery History -->
+      ${mGrocery.length > 0 ? `
+        <div class="history-card">
+          <div class="history-title">이번 달 장보기 내역</div>
+          <div class="history-list">
+            ${mGrocery.map(e => {
+              const d = new Date(e.date);
+              return `<div class="history-item">
+                <div class="history-icon" style="background:#81b29a22">🛒</div>
+                <div class="history-info">
+                  <div class="history-memo">${e.memo || "장보기"}</div>
+                  <div class="history-time">${d.getMonth()+1}/${d.getDate()}</div>
+                </div>
+                <div class="history-amount">-${fmt(e.amount)}</div>
+                <button class="del-btn" onclick="delGrocery(${e.id})">✕</button>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+      ` : `<div class="empty">이번 달 장보기 내역이 없어요 🥦<br/>집밥 화이팅!</div>`}
+    `}
+  `;
+  document.getElementById("app").innerHTML = html;
+}
+
+checkSavings();
+render();
+</script>
+</body>
+</html>
